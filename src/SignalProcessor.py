@@ -13,14 +13,21 @@ class SignalProcessor:
         # We want meaningful pitch coverage. 7 octaves is standard for CQT.
         self.n_bins = bins_per_octave * 7 
 
-    def get_chromagram(self, audio_path_or_y):
+    def get_chromagram(self, audio_path_or_y, sr=None):
         """
         Computes the Chromagram from an audio file path or a loaded numpy array.
+        
+        Args:
+            audio_path_or_y: Either a file path (str) or a numpy array of audio samples
+            sr: Sample rate (optional, uses self.sr if not provided)
         """
         if isinstance(audio_path_or_y, str):
-            y, sr = librosa.load(audio_path_or_y, sr=self.sr)
+            y, _ = librosa.load(audio_path_or_y, sr=self.sr)
         else:
             y = audio_path_or_y
+            # Resample if needed
+            if sr is not None and sr != self.sr:
+                y = librosa.resample(y, orig_sr=sr, target_sr=self.sr)
             
         # 1. HPSS: Isolate Harmonic component (melody) from Percussive (rhythm/noise)
         y_harmonic, y_percussive = librosa.effects.hpss(y)

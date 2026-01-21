@@ -4,240 +4,855 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maqam Detector 2.0 - Obsidian Web</title>
+    <title>Maqam Detector 2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #050505;
-            --card-color: #1E1E1E;
-            --primary: #00E5FF;
-            --secondary: #FF0055;
-            --text-color: #E0E0E0;
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --accent-cyan: #00d4ff;
+            --accent-magenta: #ff0080;
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #606070;
+            --border-color: #2a2a3a;
+            --gradient-1: linear-gradient(135deg, #00d4ff 0%, #8b5cf6 100%);
+            --gradient-2: linear-gradient(135deg, #ff0080 0%, #8b5cf6 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Courier New', Courier, monospace;
-            margin: 0;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 0, 128, 0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 40px 0 30px;
+        }
+
+        .logo {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
         }
 
         h1 {
-            margin-top: 20px;
-            letter-spacing: 2px;
-            color: var(--primary);
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .dashboard {
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        /* Tabs */
+        .tabs {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 600px;
-            padding: 20px;
-        }
-
-        .card {
-            background-color: var(--card-color);
-            padding: 20px;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: var(--bg-secondary);
+            padding: 6px;
             border-radius: 12px;
-            border: 1px solid #333;
-            width: 100%;
-            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab.active {
+            background: var(--gradient-1);
+            color: #000;
+        }
+
+        /* Section visibility */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
 
-        .prediction {
-            font-size: 3em;
-            font-weight: bold;
-            color: var(--secondary);
-            margin: 10px 0;
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
-        .scores {
-            font-size: 0.8em;
-            color: #888;
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
         }
 
-        .chip {
-            background: #333;
-            padding: 4px 8px;
+        .card-icon.cyan {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        .card-icon.magenta {
+            background: rgba(255, 0, 128, 0.15);
+            color: var(--accent-magenta);
+        }
+
+        .card-icon.purple {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .card-icon.green {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 212, 255, 0.02);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 212, 255, 0.1);
+            transform: scale(1.01);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Result Display */
+        .result-display {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .result-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .result-maqam {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .result-jins {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .confidence-bar {
+            height: 8px;
+            background: var(--bg-secondary);
             border-radius: 4px;
-            margin: 2px;
-            display: inline-block;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: var(--gradient-1);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-select,
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .form-select:focus,
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--gradient-1);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Maqam Selector Grid */
+        .maqam-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .maqam-chip {
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .maqam-chip:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .maqam-chip.selected {
+            background: var(--gradient-1);
+            color: #000;
+            border-color: transparent;
+            font-weight: 600;
+        }
+
+        /* Status Messages */
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 0.9rem;
+        }
+
+        .status.success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+        }
+
+        .status.error {
+            background: rgba(255, 0, 128, 0.15);
+            color: var(--accent-magenta);
+        }
+
+        .status.loading {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent-cyan);
         }
 
         /* Visualizer */
-        #chromaCanvas {
-            background-color: #000;
-            border-radius: 50%;
-            border: 2px solid #222;
+        #visualizer {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-top: 16px;
         }
 
-        .upload-btn {
-            margin-top: 20px;
-            padding: 15px 30px;
-            background: var(--primary);
-            color: #000;
-            border: none;
-            border-radius: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1.1em;
-        }
-
-        .upload-btn:hover {
-            opacity: 0.9;
-        }
-
+        /* Hidden file input */
         input[type="file"] {
             display: none;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .result-maqam {
+                font-size: 2rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+        }
+
+        /* Family Badge */
+        .family-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent-purple);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 8px;
         }
     </style>
 </head>
 
 <body>
+    <div class="bg-gradient"></div>
 
-    <h1>MAQAM DETECTOR 2.0</h1>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🎵</div>
+                <h1>Maqam Detector</h1>
+            </div>
+            <p class="subtitle">AI-Powered Arabic Music Analysis • 36-Bin Microtonal Resolution</p>
+        </header>
 
-    <div class="dashboard">
-        <div class="card">
-            <div>DETECTED MAQAM</div>
-            <div class="prediction" id="maqamLabel">UNKNOWN</div>
-            <div class="scores" id="scoresContainer">Waiting for audio...</div>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('detect')">🎯 Detect Maqam</button>
+            <button class="tab" onclick="showSection('contribute')">📤 Contribute Data</button>
+            <button class="tab" onclick="showSection('about')">ℹ️ About</button>
         </div>
 
-        <canvas id="chromaCanvas" width="300" height="300"></canvas>
+        <!-- Detect Section -->
+        <section id="detect-section" class="section active">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon cyan">🎤</div>
+                    <div>
+                        <div class="card-title">Upload Audio</div>
+                        <div class="card-subtitle">Supports MP3, WAV, FLAC, M4A, OGG</div>
+                    </div>
+                </div>
 
-        <label class="upload-btn">
-            UPLOAD WAV
-            <input type="file" id="audioInput" accept=".wav">
-        </label>
-        <p id="status" style="margin-top:10px; font-size:0.8em; color:#555;">Status: Disconnected</p>
+                <div class="upload-zone" id="detectUpload" onclick="document.getElementById('detectFile').click()">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Click or drag audio file here</div>
+                    <div class="upload-hint">Upload a taqsim or melodic recording to identify its maqam</div>
+                </div>
+                <input type="file" id="detectFile" accept=".mp3,.wav,.flac,.m4a,.ogg,audio/*">
+            </div>
+
+            <!-- Result Card (hidden initially) -->
+            <div class="card" id="resultCard" style="display: none;">
+                <div class="result-display">
+                    <div class="result-label">Detected Maqam</div>
+                    <div class="result-maqam" id="resultMaqam">BAYATI</div>
+                    <div class="result-jins" id="resultJins">Jins Bayati → Jins Nahawand</div>
+                    <span class="family-badge" id="resultFamily">Bayati Family</span>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confidenceBar" style="width: 0%"></div>
+                    </div>
+                    <div class="card-subtitle" style="margin-top: 8px;">
+                        Confidence: <span id="confidenceText">0%</span>
+                    </div>
+                </div>
+                <canvas id="visualizer"></canvas>
+            </div>
+
+            <div id="detectStatus"></div>
+        </section>
+
+        <!-- Contribute Section -->
+        <section id="contribute-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon green">🎁</div>
+                    <div>
+                        <div class="card-title">Contribute Training Data</div>
+                        <div class="card-subtitle">Help improve detection accuracy for everyone!</div>
+                    </div>
+                </div>
+
+                <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                    Upload a recording and select its maqam. Your contribution helps train the AI to better recognize
+                    maqamat.
+                </p>
+
+                <div class="form-group">
+                    <label class="form-label">1. Select Maqam</label>
+                    <div class="maqam-grid" id="maqamGrid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">2. Upload Audio File</label>
+                    <div class="upload-zone" id="contributeUpload"
+                        onclick="document.getElementById('contributeFile').click()" style="padding: 24px;">
+                        <div class="upload-icon" style="font-size: 32px;">📤</div>
+                        <div class="upload-text" id="contributeFileName">Click to select audio file</div>
+                        <div class="upload-hint">MP3, WAV, FLAC, M4A, OGG supported</div>
+                    </div>
+                    <input type="file" id="contributeFile" accept=".mp3,.wav,.flac,.m4a,.ogg,audio/*">
+                </div>
+
+                <button class="btn btn-primary" id="contributeBtn" onclick="submitContribution()" disabled
+                    style="width: 100%; margin-top: 8px;">
+                    Submit Training Data
+                </button>
+
+                <div id="contributeStatus"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon purple">📊</div>
+                    <div>
+                        <div class="card-title">Training Status</div>
+                        <div class="card-subtitle">Current model training data</div>
+                    </div>
+                </div>
+                <div id="trainingStats" style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Loading training stats...
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon magenta">🎶</div>
+                    <div>
+                        <div class="card-title">What is Maqam?</div>
+                        <div class="card-subtitle">Understanding Arabic Modal Music</div>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); line-height: 1.7;">
+                    <strong style="color: var(--text-primary);">Maqam</strong> (مقام) is the system of melodic modes
+                    used in Arabic music. Each maqam defines a unique set of notes, intervals, and melodic patterns that
+                    give it its distinctive character.<br><br>
+                    A maqam is built from smaller building blocks called <strong
+                        style="color: var(--text-primary);">Jins</strong> (جنس) - typically a lower tetrachord and an
+                    upper tetrachord combined together.<br><br>
+                    This detector uses <strong style="color: var(--accent-cyan);">36-bin microtonal analysis</strong> to
+                    capture the quarter-tones and neutral intervals unique to Arabic music.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon cyan">⚙️</div>
+                    <div>
+                        <div class="card-title">How It Works</div>
+                        <div class="card-subtitle">Technical Overview</div>
+                    </div>
+                </div>
+                <ol style="color: var(--text-secondary); line-height: 2; padding-left: 20px;">
+                    <li><strong style="color: var(--text-primary);">Audio Processing:</strong> HPSS isolates the melodic
+                        content</li>
+                    <li><strong style="color: var(--text-primary);">Pitch Analysis:</strong> CQT with 36 bins per octave
+                        captures microtones</li>
+                    <li><strong style="color: var(--text-primary);">Tonic Detection:</strong> Finds the rukooz (tonic
+                        note)</li>
+                    <li><strong style="color: var(--text-primary);">Jins Matching:</strong> Identifies the two
+                        constituent tetrachords</li>
+                    <li><strong style="color: var(--text-primary);">Maqam Prediction:</strong> Markov chains + Neural
+                        network classify the maqam</li>
+                </ol>
+            </div>
+        </section>
     </div>
 
     <script>
-        const ws = new WebSocket("ws://" + window.location.host + "/ws/analyze");
-        const statusEl = document.getElementById('status');
-        const maqamLabel = document.getElementById('maqamLabel');
-        const scoresContainer = document.getElementById('scoresContainer');
-        const canvas = document.getElementById('chromaCanvas');
-        const ctx = canvas.getContext('2d');
+        // Maqam list from library
+        const MAQAMAT = [
+            'Bayati', 'Rast', 'Nahawand', 'Hijaz', 'Kurd', 'Sikah', 'Ajam', 'Saba',
+            'Nikriz', 'Suznak', 'Huzam', 'Iraq', 'Hijazkar', 'Jiharkah', 'Husayni',
+            'Bayati_Shuri', 'Nairuz', 'Nahawand_Murassaa', 'Shadd_Araban', 'Zanjaran',
+            'Shawq_Afza', 'Saba_Zamzam', 'Nawa_Athar', 'Athar_Kurd'
+        ];
 
-        ws.onopen = () => { statusEl.innerText = "Status: Connected"; statusEl.style.color = "lime"; };
-        ws.onclose = () => { statusEl.innerText = "Status: Disconnected"; statusEl.style.color = "red"; };
+        let selectedMaqam = null;
+        let contributeFile = null;
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.prediction) {
-                maqamLabel.innerText = data.prediction.toUpperCase();
+        // Initialize maqam grid
+        function initMaqamGrid() {
+            const grid = document.getElementById('maqamGrid');
+            grid.innerHTML = MAQAMAT.map(m =>
+                `<div class="maqam-chip" onclick="selectMaqam('${m}')" id="chip-${m}">${m.replace('_', ' ')}</div>`
+            ).join('');
+        }
 
-                // Scores
-                scoresContainer.innerHTML = "";
-                let scores = data.confidence || {};
-                for (let k in scores) {
-                    let s = document.createElement("span");
-                    s.className = "chip";
-                    s.innerText = k + ": " + parseFloat(scores[k]).toFixed(2);
-                    scoresContainer.appendChild(s);
-                }
+        function selectMaqam(maqam) {
+            // Deselect previous
+            document.querySelectorAll('.maqam-chip').forEach(c => c.classList.remove('selected'));
+            // Select new
+            document.getElementById('chip-' + maqam).classList.add('selected');
+            selectedMaqam = maqam;
+            updateContributeButton();
+        }
 
-                // Draw Visualizer
-                drawVisualizer(data.chromagram, data.rukooz);
-            }
-        };
+        function showSection(section) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
 
-        function drawVisualizer(chroma, rukooz) {
-            // Check dimensions. API sends [36, Time] or flattened list? 
-            // In API we sent `chroma.tolist()`. If input is 1D array -> 1D list.
-            // If input is 2D -> List of lists.
+            // Show section
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(section + '-section').classList.add('active');
+        }
 
-            let energy = new Array(36).fill(0);
+        // File upload handlers
+        document.getElementById('detectFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            await analyzeFile(file);
+        });
 
-            // Flatten logic
-            if (Array.isArray(chroma[0])) {
-                // 2D, define average
-                for (let i = 0; i < 36; i++) {
-                    let sum = 0;
-                    for (let t = 0; t < chroma[0].length; t++) {
-                        sum += chroma[i][t] || 0; // Check shape carefully
+        document.getElementById('contributeFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            contributeFile = file;
+            document.getElementById('contributeFileName').innerText = file.name;
+            document.getElementById('contributeUpload').style.borderColor = 'var(--accent-green)';
+            updateContributeButton();
+        });
+
+        // Drag and drop
+        ['detectUpload', 'contributeUpload'].forEach(id => {
+            const zone = document.getElementById(id);
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    if (id === 'detectUpload') {
+                        analyzeFile(file);
+                    } else {
+                        contributeFile = file;
+                        document.getElementById('contributeFileName').innerText = file.name;
+                        updateContributeButton();
                     }
-                    // Wait, librosa chroma is [bins, time]. So chroma[i] is the array for bin i.
-                    // Correct.
-                    if (chroma[i].length > 0)
-                        energy[i] = chroma[i].reduce((a, b) => a + b, 0) / chroma[i].length;
                 }
-            } else {
-                energy = chroma;
-            }
+            });
+        });
 
-            // Normalize
-            let maxE = Math.max(...energy) || 1;
+        async function analyzeFile(file) {
+            const statusDiv = document.getElementById('detectStatus');
+            statusDiv.innerHTML = '<div class="status loading"><span class="spinner"></span> Analyzing audio...</div>';
 
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            const radius = 100;
-            const barMax = 40;
+            const formData = new FormData();
+            formData.append('file', file);
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            // Draw
-            for (let i = 0; i < 36; i++) {
-                let angle = (i * (2 * Math.PI / 36)) - (Math.PI / 2);
-                let val = energy[i] / maxE;
-                let barLen = val * barMax;
+                if (!response.ok) throw new Error('Analysis failed');
 
-                // Color
-                ctx.strokeStyle = (i === rukooz) ? "#FF0055" : `rgba(0, 229, 255, ${0.3 + val * 0.7})`;
-                ctx.lineWidth = 4;
-                ctx.lineCap = "round";
+                const data = await response.json();
+                showResult(data);
+                statusDiv.innerHTML = '<div class="status success">✓ Analysis complete!</div>';
 
-                ctx.beginPath();
-                ctx.moveTo(
-                    cx + Math.cos(angle) * (radius),
-                    cy + Math.sin(angle) * (radius)
-                );
-                ctx.lineTo(
-                    cx + Math.cos(angle) * (radius + barLen + 5),
-                    cy + Math.sin(angle) * (radius + barLen + 5)
-                );
-                ctx.stroke();
-
-                // Grid markers
-                if (i % 3 === 0) {
-                    ctx.fillStyle = "#333";
-                    ctx.beginPath();
-                    ctx.arc(
-                        cx + Math.cos(angle) * (radius + barMax + 15),
-                        cy + Math.sin(angle) * (radius + barMax + 15),
-                        2, 0, 2 * Math.PI
-                    );
-                    ctx.fill();
-                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
             }
         }
 
-        // Upload handler
-        document.getElementById('audioInput').addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        function showResult(data) {
+            document.getElementById('resultCard').style.display = 'block';
 
-            // Read as ArrayBuffer and send
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(evt.target.result);
-                } else {
-                    alert("WebSocket not connected!");
-                }
+            const maqam = data.predicted_maqam || 'Unknown';
+            document.getElementById('resultMaqam').innerText = maqam.toUpperCase().replace('_', ' ');
+
+            // Extract jins info if available
+            const details = data.details || {};
+            const jinsAnalysis = details.jins_analysis || {};
+            const jins1 = jinsAnalysis.jins1 || 'Unknown';
+            const jins2 = jinsAnalysis.jins2 || 'Unknown';
+            document.getElementById('resultJins').innerText = `Jins ${jins1} → Jins ${jins2}`;
+
+            // Family
+            const family = getMaqamFamily(maqam);
+            document.getElementById('resultFamily').innerText = `${family} Family`;
+
+            // Confidence
+            const confidence = (details.confidence || 0) * 100;
+            document.getElementById('confidenceBar').style.width = confidence + '%';
+            document.getElementById('confidenceText').innerText = confidence.toFixed(0) + '%';
+
+            // Scroll to result
+            document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getMaqamFamily(maqam) {
+            const families = {
+                'Bayati': 'Bayati', 'Husayni': 'Bayati', 'Bayati_Shuri': 'Bayati',
+                'Rast': 'Rast', 'Suznak': 'Rast', 'Nairuz': 'Rast',
+                'Nahawand': 'Nahawand', 'Nahawand_Murassaa': 'Nahawand',
+                'Hijaz': 'Hijaz', 'Hijazkar': 'Hijaz', 'Shadd_Araban': 'Hijaz', 'Zanjaran': 'Hijaz',
+                'Kurd': 'Kurd',
+                'Sikah': 'Sikah', 'Huzam': 'Sikah', 'Iraq': 'Sikah',
+                'Ajam': 'Ajam', 'Jiharkah': 'Ajam', 'Shawq_Afza': 'Ajam',
+                'Saba': 'Saba', 'Saba_Zamzam': 'Saba',
+                'Nikriz': 'Nikriz', 'Nawa_Athar': 'Nikriz', 'Athar_Kurd': 'Nikriz'
             };
-            reader.readAsArrayBuffer(file);
-        });
+            return families[maqam] || 'Unknown';
+        }
 
+        function updateContributeButton() {
+            const btn = document.getElementById('contributeBtn');
+            btn.disabled = !(selectedMaqam && contributeFile);
+        }
+
+        async function submitContribution() {
+            if (!selectedMaqam || !contributeFile) return;
+
+            const statusDiv = document.getElementById('contributeStatus');
+            const btn = document.getElementById('contributeBtn');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Uploading...';
+
+            const formData = new FormData();
+            formData.append('file', contributeFile);
+
+            try {
+                const response = await fetch(`/contribute?maqam_name=${selectedMaqam}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Upload failed');
+
+                const data = await response.json();
+                statusDiv.innerHTML = `<div class="status success">✓ Thank you! Your ${selectedMaqam} recording has been added to training data.</div>`;
+
+                // Reset form
+                selectedMaqam = null;
+                contributeFile = null;
+                document.querySelectorAll('.maqam-chip').forEach(c => c.classList.remove('selected'));
+                document.getElementById('contributeFileName').innerText = 'Click to select audio file';
+                document.getElementById('contributeUpload').style.borderColor = '';
+
+                // Refresh stats
+                loadTrainingStats();
+
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">✗ Error: ${error.message}</div>`;
+            }
+
+            btn.innerHTML = 'Submit Training Data';
+            updateContributeButton();
+        }
+
+        async function loadTrainingStats() {
+            try {
+                const response = await fetch('/training-stats');
+                if (!response.ok) throw new Error();
+                const stats = await response.json();
+
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px;">';
+                for (const [maqam, count] of Object.entries(stats.files_per_maqam || {})) {
+                    html += `<div style="padding: 8px; background: var(--bg-secondary); border-radius: 6px; text-align: center;">
+                        <div style="font-weight: 600; color: var(--text-primary);">${maqam}</div>
+                        <div style="font-size: 0.8rem;">${count} files</div>
+                    </div>`;
+                }
+                html += '</div>';
+
+                if (Object.keys(stats.files_per_maqam || {}).length === 0) {
+                    html = '<p>No training data yet. Be the first to contribute!</p>';
+                }
+
+                document.getElementById('trainingStats').innerHTML = html;
+            } catch {
+                document.getElementById('trainingStats').innerHTML = 'Could not load training stats.';
+            }
+        }
+
+        // Initialize
+        initMaqamGrid();
+        loadTrainingStats();
     </script>
 </body>
 
