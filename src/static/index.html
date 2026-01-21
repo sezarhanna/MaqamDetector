@@ -17,6 +17,8 @@
             --text-muted: #6b7280;
             --border: #e5e5e5;
             --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --danger: #dc2626;
+            --success: #16a34a;
         }
 
         * {
@@ -35,11 +37,9 @@
         .container {
             max-width: 480px;
             margin: 0 auto;
-            padding: 0 16px;
-            padding-bottom: 80px;
+            padding: 0 16px 100px;
         }
 
-        /* Header */
         header {
             display: flex;
             align-items: center;
@@ -82,19 +82,6 @@
             margin-left: 4px;
         }
 
-        .header-icons {
-            display: flex;
-            gap: 16px;
-        }
-
-        .header-icons button {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            color: var(--text-muted);
-            cursor: pointer;
-        }
-
         /* Hero Card */
         .hero-card {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
@@ -121,34 +108,59 @@
         .hero-footer {
             font-size: 0.8rem;
             opacity: 0.7;
+            margin-top: 16px;
         }
 
-        .upload-btn {
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             background: rgba(255, 255, 255, 0.15);
-            border: 2px dashed rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 12px;
-            padding: 14px 28px;
+            padding: 12px 20px;
             color: white;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 16px;
         }
 
-        .upload-btn:hover {
+        .btn:hover {
             background: rgba(255, 255, 255, 0.25);
             border-color: rgba(255, 255, 255, 0.6);
         }
 
-        .mic-icon {
-            font-size: 1.4rem;
+        .btn.recording {
+            background: var(--danger);
+            border-color: var(--danger);
+            animation: pulse 1s infinite;
         }
 
-        /* Section */
+        .btn.solid {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
         .section-title {
             font-size: 1.1rem;
             font-weight: 600;
@@ -168,14 +180,20 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            text-decoration: none;
-            color: var(--text);
             cursor: pointer;
             transition: transform 0.2s;
         }
 
         .maqam-item:hover {
             transform: translateY(-4px);
+        }
+
+        .maqam-item.selected {
+            transform: scale(1.1);
+        }
+
+        .maqam-item.selected .maqam-icon {
+            box-shadow: 0 0 0 3px var(--accent);
         }
 
         .maqam-icon {
@@ -190,16 +208,16 @@
         .maqam-name {
             font-size: 0.85rem;
             font-weight: 500;
-            color: var(--text);
         }
 
-        /* Info Card */
+        /* Cards */
         .info-card {
             background: var(--card);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
             box-shadow: var(--shadow);
+            cursor: pointer;
         }
 
         .info-card-icon {
@@ -237,11 +255,9 @@
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            text-decoration: none;
             color: var(--text-muted);
             font-size: 0.7rem;
             cursor: pointer;
-            transition: color 0.2s;
         }
 
         .nav-item.active {
@@ -332,7 +348,6 @@
             height: 100%;
             background: linear-gradient(90deg, var(--primary), var(--accent));
             border-radius: 4px;
-            transition: width 0.5s ease;
         }
 
         .result-close {
@@ -347,64 +362,15 @@
             cursor: pointer;
         }
 
-        /* Songs List */
-        .songs-section {
+        /* Sections */
+        .section {
             display: none;
         }
 
-        .songs-section.active {
+        .section.active {
             display: block;
         }
 
-        .song-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            background: var(--card);
-            border-radius: 12px;
-            margin-bottom: 8px;
-            box-shadow: var(--shadow);
-        }
-
-        .song-thumb {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
-            background: var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .song-info {
-            flex: 1;
-        }
-
-        .song-title {
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-
-        .song-artist {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .song-play {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        /* Back Button */
         .back-btn {
             display: inline-flex;
             align-items: center;
@@ -418,131 +384,218 @@
             margin-bottom: 16px;
         }
 
-        /* Loading */
-        .loading {
+        /* Recording Indicator */
+        .recording-indicator {
             display: none;
-            text-align: center;
-            padding: 20px;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--danger);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 16px;
         }
 
-        .loading.show {
-            display: block;
+        .recording-indicator.show {
+            display: flex;
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border);
-            border-top-color: var(--primary);
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            background: white;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 12px;
+            animation: blink 1s infinite;
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
             }
         }
 
-        /* Hidden file input */
+        /* Waveform */
+        .waveform {
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .waveform-bar {
+            width: 4px;
+            background: white;
+            border-radius: 2px;
+            transition: height 0.1s;
+        }
+
+        /* Status */
+        .status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 0.9rem;
+        }
+
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.error {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
         input[type="file"] {
             display: none;
+        }
+
+        /* Contribute Section */
+        .maqam-select-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .maqam-select-item {
+            padding: 12px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .maqam-select-item:hover {
+            border-color: var(--primary);
+        }
+
+        .maqam-select-item.selected {
+            border-color: var(--accent);
+            background: #fef3c7;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <!-- Header -->
         <header>
             <div class="logo">
                 <div class="logo-icon">م</div>
                 <span class="logo-text">Maqami</span>
                 <span class="logo-arabic">مقامي</span>
             </div>
-            <div class="header-icons">
-                <button>🔍</button>
-                <button>👤</button>
-            </div>
         </header>
 
         <!-- Main Section -->
-        <main id="mainSection">
-            <!-- Hero Card -->
-            <div class="hero-card" id="heroCard">
+        <section class="section active" id="detectSection">
+            <div class="hero-card">
                 <h1 class="hero-title">Detect Maqam</h1>
-                <p class="hero-subtitle">Tap to Identify or Upload Audio</p>
-                <label class="upload-btn" id="uploadBtn">
-                    <span class="mic-icon">🎤</span>
-                    <span>Upload Audio</span>
-                    <input type="file" id="audioInput" accept=".mp3,.wav,.flac,.m4a,.ogg,audio/*">
-                </label>
+                <p class="hero-subtitle">Record live or upload audio to identify</p>
+
+                <div class="waveform" id="waveform">
+                    <!-- Waveform bars will be added by JS -->
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn" id="recordBtn" onclick="toggleRecording()">
+                        <span id="recordIcon">🎤</span>
+                        <span id="recordText">Record</span>
+                    </button>
+                    <label class="btn">
+                        <span>📁</span>
+                        <span>Upload</span>
+                        <input type="file" id="audioInput" accept="audio/*">
+                    </label>
+                </div>
+
                 <p class="hero-footer">AI-Powered, 36-Bin Microtonal Analysis</p>
             </div>
 
-            <!-- Loading State -->
-            <div class="loading" id="loadingState">
-                <div class="spinner"></div>
-                <p>Analyzing audio...</p>
-            </div>
-
-            <!-- Maqam Families -->
             <h2 class="section-title">Explore Maqam Families</h2>
-            <div class="maqam-grid" id="maqamGrid">
-                <!-- Populated by JS -->
-            </div>
+            <div class="maqam-grid" id="maqamGrid"></div>
 
-            <!-- Info Cards -->
-            <div class="info-card" id="learnCard" onclick="showSection('learn')">
+            <div class="info-card" onclick="showSection('learn')">
                 <div class="info-card-icon">📚</div>
                 <div class="info-card-title">Learn & Discover</div>
                 <div class="info-card-text">What is a Jins? Understand the building blocks.</div>
             </div>
-
-            <div class="info-card" id="contributeCard" onclick="showSection('contribute')">
-                <div class="info-card-icon">🎁</div>
-                <div class="info-card-title">Contribute to the AI</div>
-                <div class="info-card-text">Help train our model by uploading labeled audio.</div>
-            </div>
-        </main>
-
-        <!-- Songs Section -->
-        <section class="songs-section" id="songsSection">
-            <button class="back-btn" onclick="showSection('main')">← Back</button>
-            <h2 class="section-title" id="songsSectionTitle">Songs in Maqam</h2>
-            <div id="songsList"></div>
         </section>
 
         <!-- Contribute Section -->
-        <section class="songs-section" id="contributeSection">
-            <button class="back-btn" onclick="showSection('main')">← Back</button>
+        <section class="section" id="contributeSection">
+            <button class="back-btn" onclick="showSection('detect')">← Back</button>
             <h2 class="section-title">Contribute Training Data</h2>
             <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
-                Upload a recording and select its maqam to help improve detection accuracy.
+                Record or upload audio and select its maqam to help improve detection.
             </p>
-            <div class="maqam-grid" id="contributeMaqamGrid"></div>
-            <div style="margin-top: 16px;">
-                <label class="upload-btn"
-                    style="background: var(--primary); border: none; width: 100%; justify-content: center;">
-                    <span>📤</span>
-                    <span id="contributeFileName">Select Audio File</span>
-                    <input type="file" id="contributeInput" accept=".mp3,.wav,.flac,.m4a,.ogg,audio/*">
-                </label>
+
+            <div class="hero-card" style="padding: 20px;">
+                <div class="waveform" id="contributeWaveform"></div>
+                <div class="btn-group">
+                    <button class="btn" id="contributeRecordBtn" onclick="toggleContributeRecording()">
+                        <span id="contributeRecordIcon">🎤</span>
+                        <span id="contributeRecordText">Record</span>
+                    </button>
+                    <label class="btn">
+                        <span>📁</span>
+                        <span>Upload</span>
+                        <input type="file" id="contributeInput" accept="audio/*">
+                    </label>
+                </div>
             </div>
-            <button id="submitContribute"
-                style="width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 12px;"
-                disabled>
-                Submit Training Data
+
+            <h3 style="font-size: 0.9rem; font-weight: 600; margin: 20px 0 12px;">Select Maqam:</h3>
+            <div class="maqam-select-grid" id="contributeMaqamGrid"></div>
+
+            <button class="submit-btn" id="submitContribute" onclick="submitContribution()" disabled>
+                Submit Recording
             </button>
-            <div id="contributeStatus" style="margin-top: 12px; text-align: center;"></div>
+
+            <div id="contributeStatus"></div>
         </section>
 
         <!-- Learn Section -->
-        <section class="songs-section" id="learnSection">
-            <button class="back-btn" onclick="showSection('main')">← Back</button>
+        <section class="section" id="learnSection">
+            <button class="back-btn" onclick="showSection('detect')">← Back</button>
             <h2 class="section-title">What is Maqam?</h2>
-            <div class="info-card">
+            <div class="info-card" style="cursor: default;">
                 <p style="line-height: 1.7; color: var(--text-muted);">
                     <strong style="color: var(--text);">Maqam</strong> (مقام) is the system of melodic modes used in
                     Arabic music.
@@ -552,7 +605,7 @@
                     that combines to form a complete maqam.
                 </p>
             </div>
-            <div class="info-card">
+            <div class="info-card" style="cursor: default;">
                 <h3 style="font-size: 1rem; margin-bottom: 8px;">How Detection Works</h3>
                 <ol style="padding-left: 20px; color: var(--text-muted); line-height: 1.8;">
                     <li>Audio is processed with HPSS</li>
@@ -582,26 +635,22 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-        <div class="nav-item active" onclick="showSection('main')">
+        <div class="nav-item active" id="navHome" onclick="showSection('detect')">
             <span class="nav-icon">🏠</span>
             <span>Home</span>
         </div>
-        <div class="nav-item" onclick="showSection('main'); document.getElementById('uploadBtn').click();">
-            <span class="nav-icon">🎤</span>
-            <span>Detect</span>
+        <div class="nav-item" id="navContribute" onclick="showSection('contribute')">
+            <span class="nav-icon">🎁</span>
+            <span>Contribute</span>
         </div>
-        <div class="nav-item" onclick="showSection('songs'); loadAllSongs();">
+        <div class="nav-item" id="navLearn" onclick="showSection('learn')">
             <span class="nav-icon">📚</span>
-            <span>Library</span>
-        </div>
-        <div class="nav-item" onclick="showSection('contribute')">
-            <span class="nav-icon">👤</span>
-            <span>Profile</span>
+            <span>Learn</span>
         </div>
     </nav>
 
     <script>
-        // Maqam data with icons
+        // Maqam data
         const MAQAM_FAMILIES = [
             { name: 'Rast', icon: 'icons/rast.png', color: '#4a9d9a' },
             { name: 'Bayati', icon: 'icons/bayati.png', color: '#d4a24e' },
@@ -614,254 +663,274 @@
             { name: 'Nikriz', icon: 'icons/nikriz.png', color: '#9b2c2c' }
         ];
 
-        // Example songs for each maqam (10 per maqam)
-        const MAQAM_SONGS = {
-            'Rast': [
-                { title: 'Lamma Bada Yatathanna', artist: 'Traditional Muwashshah', year: 'Traditional' },
-                { title: 'Ya Zahratan Fi Khayali', artist: 'Farid al-Atrash', year: '1957' },
-                { title: 'Taqsim Rast - Oud', artist: 'Munir Bashir', year: '1971' },
-                { title: 'Samai Rast', artist: 'Traditional', year: 'Classical' },
-                { title: 'Ahwak', artist: 'Abdel Halim Hafez', year: '1957' },
-                { title: 'Nassam Alayna El Hawa', artist: 'Fairuz', year: '1952' },
-                { title: 'Milli Wendek', artist: 'Sabah Fakhri', year: '1990s' },
-                { title: 'Taqsim Rast - Qanun', artist: 'Simon Shaheen', year: '1995' },
-                { title: 'Ya Maylatan', artist: 'Traditional Muwashshah', year: 'Traditional' },
-                { title: 'Taqsim Rast - Violin', artist: 'Sami al-Shawwa', year: '1930s' }
-            ],
-            'Bayati': [
-                { title: 'Enta Omri', artist: 'Umm Kulthum', year: '1964' },
-                { title: 'Taqsim Bayati - Oud', artist: 'Munir Bashir', year: '1968' },
-                { title: 'Qadak al-Mayyas', artist: 'Traditional Muwashshah', year: 'Traditional' },
-                { title: 'Alf Leila wa Leila', artist: 'Umm Kulthum', year: '1969' },
-                { title: 'Ahwak', artist: 'Abdel Halim Hafez', year: '1957' },
-                { title: 'Al Atlal', artist: 'Umm Kulthum', year: '1966' },
-                { title: 'Taqsim Bayati - Nay', artist: 'Hassan Kassab', year: '1970s' },
-                { title: 'Ya Hasra al-Ahlam', artist: 'Farid al-Atrash', year: '1960s' },
-                { title: 'Samai Bayati', artist: 'Traditional', year: 'Classical' },
-                { title: 'Taqsim Bayati', artist: 'Naseer Shamma', year: '2000s' }
-            ],
-            'Hijaz': [
-                { title: 'Ana Fi Intizarak', artist: 'Umm Kulthum', year: '1943' },
-                { title: 'Taqsim Hijaz - Oud', artist: 'Sabah Fakhri', year: '1980s' },
-                { title: 'Ya Mal al-Sham', artist: 'Sabah Fakhri', year: '1970s' },
-                { title: 'Allahu Akbar (Adhan)', artist: 'Traditional', year: 'Religious' },
-                { title: 'Quranic Recitation - Hijaz', artist: 'Various', year: 'Religious' },
-                { title: 'Samai Hijaz Kar', artist: 'Traditional', year: 'Classical' },
-                { title: 'Taqsim Hijaz - Violin', artist: 'Taiseer Elias', year: '2000s' },
-                { title: 'Mawwal Hijaz', artist: 'Various', year: 'Traditional' },
-                { title: 'Ya Rayeh', artist: 'Dahmane El Harrachi', year: '1973' },
-                { title: 'Bashraf Hijaz', artist: 'Traditional', year: 'Classical' }
-            ],
-            'Nahawand': [
-                { title: 'Gana el Hawa', artist: 'Abdel Halim Hafez', year: '1957' },
-                { title: 'Taqsim Nahawand - Oud', artist: 'Simon Shaheen', year: '1990s' },
-                { title: 'Samai Nahawand', artist: 'Traditional', year: 'Classical' },
-                { title: 'Ya Tuyoor', artist: 'Fairuz', year: '1960s' },
-                { title: 'Habaytak Bisayf', artist: 'Fairuz', year: '1960s' },
-                { title: 'Taqsim Nahawand - Qanun', artist: 'Juliana Khalaf', year: '2010s' },
-                { title: 'Layali Nahawand', artist: 'Various', year: 'Traditional' },
-                { title: 'Ana wa Leili', artist: 'Fairuz', year: '1970s' },
-                { title: 'Bashraf Nahawand', artist: 'Traditional', year: 'Classical' },
-                { title: 'Taqsim Nahawand - Piano', artist: 'Ziad Rahbani', year: '1980s' }
-            ],
-            'Sikah': [
-                { title: 'Talama Ashku Gharami', artist: 'Traditional Muwashshah', year: 'Traditional' },
-                { title: 'Taqsim Sikah - Oud', artist: 'Marcel Khalife', year: '1980s' },
-                { title: 'Samai Sikah', artist: 'Traditional', year: 'Classical' },
-                { title: 'Mawwal Sikah', artist: 'Various', year: 'Traditional' },
-                { title: 'Taqsim Sikah - Nay', artist: 'Kudsi Erguner', year: '1990s' },
-                { title: 'Hasibak lil Zaman', artist: 'Umm Kulthum', year: '1950s' },
-                { title: 'Layali Sikah', artist: 'Sabah Fakhri', year: '1970s' },
-                { title: 'Taqsim Sikah - Buzuq', artist: 'Matar Muhammad', year: '2000s' },
-                { title: 'Ya Mun Hawa', artist: 'Traditional', year: 'Traditional' },
-                { title: 'Dawr Sikah', artist: 'Traditional', year: 'Classical' }
-            ],
-            'Ajam': [
-                { title: 'Taqsim Ajam - Oud', artist: 'Naseer Shamma', year: '2000s' },
-                { title: 'Samai Ajam (Suznak)', artist: 'Traditional', year: 'Classical' },
-                { title: 'Kan Enna Tahuna', artist: 'Fairuz', year: '1960s' },
-                { title: 'Bashraf Ajam', artist: 'Traditional', year: 'Classical' },
-                { title: 'Ajam Longa', artist: 'Traditional', year: 'Classical' },
-                { title: 'Major Mode Arabic Songs', artist: 'Various', year: 'Various' },
-                { title: 'Taqsim Ajam - Piano', artist: 'Anouar Brahem', year: '1990s' },
-                { title: 'Samai Jiharkah', artist: 'Traditional', year: 'Classical' },
-                { title: 'Layali Ajam', artist: 'Various', year: 'Traditional' },
-                { title: 'Mawwal Ajam', artist: 'Various', year: 'Traditional' }
-            ],
-            'Saba': [
-                { title: 'Taqsim Saba - Oud', artist: 'Farid al-Atrash', year: '1950s' },
-                { title: 'Rubaiyat al-Khayyam', artist: 'Umm Kulthum', year: '1950' },
-                { title: 'Samai Saba', artist: 'Traditional', year: 'Classical' },
-                { title: 'Ya Leil Ya Ain', artist: 'Various', year: 'Traditional' },
-                { title: 'Mawwal Saba', artist: 'Sabah Fakhri', year: '1980s' },
-                { title: 'Layali Saba', artist: 'Various', year: 'Traditional' },
-                { title: 'Taqsim Saba - Violin', artist: 'Aboud Abdel Al', year: '1960s' },
-                { title: 'Bashraf Saba', artist: 'Traditional', year: 'Classical' },
-                { title: 'Dawr Saba', artist: 'Traditional', year: 'Classical' },
-                { title: 'Saba Improvisation', artist: 'Naseer Shamma', year: '2010s' }
-            ],
-            'Kurd': [
-                { title: 'Taqsim Kurd - Oud', artist: 'Munir Bashir', year: '1970s' },
-                { title: 'Samai Kurd', artist: 'Traditional', year: 'Classical' },
-                { title: 'Mawwal Kurd', artist: 'Various', year: 'Traditional' },
-                { title: 'Kurd Improvisation', artist: 'Simon Shaheen', year: '2000s' },
-                { title: 'Layali Kurd', artist: 'Various', year: 'Traditional' },
-                { title: 'Bashraf Kurd', artist: 'Traditional', year: 'Classical' },
-                { title: 'Taqsim Kurd - Nay', artist: 'Various', year: 'Traditional' },
-                { title: 'Kurd Longa', artist: 'Traditional', year: 'Classical' },
-                { title: 'Minor Mode Pieces', artist: 'Various', year: 'Various' },
-                { title: 'Taqsim Kurd - Qanun', artist: 'Various', year: 'Traditional' }
-            ],
-            'Nikriz': [
-                { title: 'Taqsim Nikriz - Oud', artist: 'Farid al-Atrash', year: '1960s' },
-                { title: 'Samai Nikriz', artist: 'Traditional', year: 'Classical' },
-                { title: 'Bashraf Nikriz', artist: 'Traditional', year: 'Classical' },
-                { title: 'Mawwal Nikriz', artist: 'Various', year: 'Traditional' },
-                { title: 'Taqsim Nikriz - Violin', artist: 'Sami al-Shawwa', year: '1940s' },
-                { title: 'Nikriz Improvisation', artist: 'Various', year: 'Traditional' },
-                { title: 'Layali Nikriz', artist: 'Various', year: 'Traditional' },
-                { title: 'Turkish-Arab Pieces', artist: 'Various', year: 'Classical' },
-                { title: 'Taqsim Nikriz - Qanun', artist: 'Various', year: 'Traditional' },
-                { title: 'Nawa Athar Songs', artist: 'Various', year: 'Various' }
-            ]
-        };
+        // Audio Recording State
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let audioContext = null;
+        let analyser = null;
+        let animationId = null;
 
-        let selectedContributeMaqam = null;
-        let contributeFile = null;
+        // Contribute State
+        let contributeRecorder = null;
+        let contributeChunks = [];
+        let isContributeRecording = false;
+        let selectedMaqam = null;
+        let contributeBlob = null;
 
-        // Initialize maqam grid
+        // Initialize
+        function init() {
+            initMaqamGrid();
+            initWaveform('waveform');
+            initWaveform('contributeWaveform');
+        }
+
         function initMaqamGrid() {
             const grid = document.getElementById('maqamGrid');
             const contributeGrid = document.getElementById('contributeMaqamGrid');
 
             grid.innerHTML = MAQAM_FAMILIES.map(m => `
-                <div class="maqam-item" onclick="showMaqamSongs('${m.name}')">
-                    <img class="maqam-icon" src="${m.icon}" alt="${m.name}" onerror="this.style.background='${m.color}'; this.src='';">
+                <div class="maqam-item" onclick="exploreMaqam('${m.name}')">
+                    <img class="maqam-icon" src="${m.icon}" alt="${m.name}" 
+                         onerror="this.style.background='${m.color}'; this.style.display='flex'; this.style.alignItems='center'; this.style.justifyContent='center'; this.innerHTML='${m.name[0]}';">
                     <span class="maqam-name">${m.name}</span>
                 </div>
             `).join('');
 
             contributeGrid.innerHTML = MAQAM_FAMILIES.map(m => `
-                <div class="maqam-item" id="contrib-${m.name}" onclick="selectContributeMaqam('${m.name}')" style="opacity: 0.6;">
-                    <img class="maqam-icon" src="${m.icon}" alt="${m.name}" style="width: 50px; height: 50px;" onerror="this.style.background='${m.color}'; this.src='';">
-                    <span class="maqam-name" style="font-size: 0.75rem;">${m.name}</span>
+                <div class="maqam-select-item" id="select-${m.name}" onclick="selectMaqam('${m.name}')">
+                    ${m.name}
                 </div>
             `).join('');
+        }
+
+        function initWaveform(id) {
+            const waveform = document.getElementById(id);
+            waveform.innerHTML = '';
+            for (let i = 0; i < 30; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'waveform-bar';
+                bar.style.height = '8px';
+                waveform.appendChild(bar);
+            }
         }
 
         function showSection(section) {
-            document.getElementById('mainSection').style.display = section === 'main' ? 'block' : 'none';
-            document.getElementById('songsSection').classList.toggle('active', section === 'songs');
-            document.getElementById('contributeSection').classList.toggle('active', section === 'contribute');
-            document.getElementById('learnSection').classList.toggle('active', section === 'learn');
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            document.getElementById(section + 'Section').classList.add('active');
+
+            if (section === 'detect') document.getElementById('navHome').classList.add('active');
+            if (section === 'contribute') document.getElementById('navContribute').classList.add('active');
+            if (section === 'learn') document.getElementById('navLearn').classList.add('active');
         }
 
-        function showMaqamSongs(maqam) {
-            document.getElementById('songsSectionTitle').textContent = `Songs in ${maqam}`;
-            const songs = MAQAM_SONGS[maqam] || [];
-            const maqamData = MAQAM_FAMILIES.find(m => m.name === maqam);
-
-            document.getElementById('songsList').innerHTML = songs.length ? songs.map(s => `
-                <div class="song-item">
-                    <div class="song-thumb" style="background: ${maqamData?.color || '#ddd'}; color: white;">🎵</div>
-                    <div class="song-info">
-                        <div class="song-title">${s.title}</div>
-                        <div class="song-artist">${s.artist}</div>
-                    </div>
-                    <button class="song-play">▶</button>
-                </div>
-            `).join('') : '<p style="color: var(--text-muted); text-align: center;">No songs available yet.</p>';
-
-            showSection('songs');
+        function exploreMaqam(name) {
+            alert(`${name} maqam selected!\n\nThis maqam family will be explored in a future update with verified song examples.`);
         }
 
-        function loadAllSongs() {
-            document.getElementById('songsSectionTitle').textContent = 'All Maqam Songs';
-            let allSongs = [];
-            for (const [maqam, songs] of Object.entries(MAQAM_SONGS)) {
-                const maqamData = MAQAM_FAMILIES.find(m => m.name === maqam);
-                songs.forEach(s => allSongs.push({ ...s, maqam, color: maqamData?.color }));
+        // ===== LIVE RECORDING FOR DETECTION =====
+        async function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 64;
+
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/wav' });
+                    analyzeAudio(blob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                document.getElementById('recordBtn').classList.add('recording');
+                document.getElementById('recordIcon').textContent = '⏹️';
+                document.getElementById('recordText').textContent = 'Stop';
+
+                visualize('waveform');
+            } catch (err) {
+                alert('Microphone access denied. Please allow microphone access to record.');
+                console.error(err);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+
+                document.getElementById('recordBtn').classList.remove('recording');
+                document.getElementById('recordIcon').textContent = '🎤';
+                document.getElementById('recordText').textContent = 'Record';
+
+                cancelAnimationFrame(animationId);
+                initWaveform('waveform');
+            }
+        }
+
+        function visualize(waveformId) {
+            const waveform = document.getElementById(waveformId);
+            const bars = waveform.querySelectorAll('.waveform-bar');
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                if (!isRecording && !isContributeRecording) return;
+                animationId = requestAnimationFrame(draw);
+
+                analyser.getByteFrequencyData(dataArray);
+
+                bars.forEach((bar, i) => {
+                    const value = dataArray[i % bufferLength] || 0;
+                    bar.style.height = Math.max(8, value / 4) + 'px';
+                });
             }
 
-            document.getElementById('songsList').innerHTML = allSongs.map(s => `
-                <div class="song-item">
-                    <div class="song-thumb" style="background: ${s.color || '#ddd'}; color: white;">🎵</div>
-                    <div class="song-info">
-                        <div class="song-title">${s.title}</div>
-                        <div class="song-artist">${s.artist} • ${s.maqam}</div>
-                    </div>
-                    <button class="song-play">▶</button>
-                </div>
-            `).join('');
+            draw();
         }
 
-        function selectContributeMaqam(maqam) {
-            MAQAM_FAMILIES.forEach(m => {
-                document.getElementById('contrib-' + m.name).style.opacity = '0.6';
-                document.getElementById('contrib-' + m.name).style.transform = 'scale(1)';
-            });
-            document.getElementById('contrib-' + maqam).style.opacity = '1';
-            document.getElementById('contrib-' + maqam).style.transform = 'scale(1.1)';
-            selectedContributeMaqam = maqam;
-            updateContributeButton();
-        }
-
-        function updateContributeButton() {
-            document.getElementById('submitContribute').disabled = !(selectedContributeMaqam && contributeFile);
-        }
-
-        // File upload
-        document.getElementById('audioInput').addEventListener('change', async e => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            document.getElementById('loadingState').classList.add('show');
-            document.getElementById('heroCard').style.display = 'none';
-
+        async function analyzeAudio(blob) {
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', blob, 'recording.wav');
 
             try {
                 const response = await fetch('/predict', { method: 'POST', body: formData });
                 const data = await response.json();
                 showResult(data);
             } catch (err) {
-                alert('Error: ' + err.message);
-            } finally {
-                document.getElementById('loadingState').classList.remove('show');
-                document.getElementById('heroCard').style.display = 'block';
+                alert('Error analyzing audio: ' + err.message);
             }
-        });
+        }
 
-        document.getElementById('contributeInput').addEventListener('change', e => {
-            contributeFile = e.target.files[0];
-            document.getElementById('contributeFileName').textContent = contributeFile?.name || 'Select Audio File';
-            updateContributeButton();
-        });
+        // ===== LIVE RECORDING FOR CONTRIBUTION =====
+        async function toggleContributeRecording() {
+            if (isContributeRecording) {
+                stopContributeRecording();
+            } else {
+                await startContributeRecording();
+            }
+        }
 
-        document.getElementById('submitContribute').addEventListener('click', async () => {
-            if (!selectedContributeMaqam || !contributeFile) return;
+        async function startContributeRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 64;
+
+                contributeRecorder = new MediaRecorder(stream);
+                contributeChunks = [];
+
+                contributeRecorder.ondataavailable = e => contributeChunks.push(e.data);
+                contributeRecorder.onstop = () => {
+                    contributeBlob = new Blob(contributeChunks, { type: 'audio/wav' });
+                    stream.getTracks().forEach(t => t.stop());
+                    updateSubmitButton();
+                };
+
+                contributeRecorder.start();
+                isContributeRecording = true;
+
+                document.getElementById('contributeRecordBtn').classList.add('recording');
+                document.getElementById('contributeRecordIcon').textContent = '⏹️';
+                document.getElementById('contributeRecordText').textContent = 'Stop';
+
+                visualize('contributeWaveform');
+            } catch (err) {
+                alert('Microphone access denied.');
+                console.error(err);
+            }
+        }
+
+        function stopContributeRecording() {
+            if (contributeRecorder && isContributeRecording) {
+                contributeRecorder.stop();
+                isContributeRecording = false;
+
+                document.getElementById('contributeRecordBtn').classList.remove('recording');
+                document.getElementById('contributeRecordIcon').textContent = '🎤';
+                document.getElementById('contributeRecordText').textContent = 'Record';
+
+                cancelAnimationFrame(animationId);
+                initWaveform('contributeWaveform');
+            }
+        }
+
+        function selectMaqam(name) {
+            MAQAM_FAMILIES.forEach(m => {
+                document.getElementById('select-' + m.name).classList.remove('selected');
+            });
+            document.getElementById('select-' + name).classList.add('selected');
+            selectedMaqam = name;
+            updateSubmitButton();
+        }
+
+        function updateSubmitButton() {
+            document.getElementById('submitContribute').disabled = !(selectedMaqam && contributeBlob);
+        }
+
+        async function submitContribution() {
+            if (!selectedMaqam || !contributeBlob) return;
 
             const formData = new FormData();
-            formData.append('file', contributeFile);
+            formData.append('file', contributeBlob, 'contribution.wav');
 
             try {
-                const response = await fetch(`/contribute?maqam_name=${selectedContributeMaqam}`, {
+                const response = await fetch(`/contribute?maqam_name=${selectedMaqam}`, {
                     method: 'POST', body: formData
                 });
                 const data = await response.json();
+
                 document.getElementById('contributeStatus').innerHTML =
-                    `<span style="color: green;">✓ Thank you! Added to ${selectedContributeMaqam} training data.</span>`;
-                contributeFile = null;
-                selectedContributeMaqam = null;
-                document.getElementById('contributeFileName').textContent = 'Select Audio File';
-                updateContributeButton();
+                    `<div class="status success">✓ Thank you! Recording added to ${selectedMaqam} training data.</div>`;
+
+                contributeBlob = null;
+                selectedMaqam = null;
+                MAQAM_FAMILIES.forEach(m => document.getElementById('select-' + m.name).classList.remove('selected'));
+                updateSubmitButton();
             } catch (err) {
                 document.getElementById('contributeStatus').innerHTML =
-                    `<span style="color: red;">Error: ${err.message}</span>`;
+                    `<div class="status error">Error: ${err.message}</div>`;
+            }
+        }
+
+        // File upload handlers
+        document.getElementById('audioInput').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) analyzeAudio(file);
+        });
+
+        document.getElementById('contributeInput').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) {
+                contributeBlob = file;
+                updateSubmitButton();
             }
         });
 
+        // Result Modal
         function showResult(data) {
             const maqam = data.predicted_maqam || 'Unknown';
             const maqamData = MAQAM_FAMILIES.find(m => maqam.includes(m.name)) || MAQAM_FAMILIES[0];
@@ -886,8 +955,8 @@
             }
         }
 
-        // Init
-        initMaqamGrid();
+        // Init on load
+        init();
     </script>
 </body>
 
