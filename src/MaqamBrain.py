@@ -166,3 +166,94 @@ class MaqamBrain:
             "jins1_root": 0,
             "jins2_root": 15
         })
+
+    def predict_timeline(self, full_chromagram, window_seconds=10, hop_seconds=5, sr=22050):
+        """
+        Analyze audio in sliding windows to detect maqam changes over time.
+        
+        Args:
+            full_chromagram: Complete chromagram of the audio
+            window_seconds: Size of each analysis window in seconds
+            hop_seconds: Hop size between windows in seconds
+            sr: Sample rate used for chromagram
+        
+        Returns:
+            dict with:
+            - timeline: List of {start_time, end_time, maqam, jins1, jins2, confidence}
+            - modulations: List of detected maqam changes
+            - dominant_maqam: Most frequent maqam across all windows
+        """
+        # Calculate frame sizes (approximate based on librosa defaults)
+        # librosa uses hop_length=512 by default, so each frame is ~23ms at 22050 Hz
+        hop_length = 512
+        frame_rate = sr / hop_length  # frames per second
+        
+        window_frames = int(window_seconds * frame_rate)
+        hop_frames = int(hop_seconds * frame_rate)
+        
+        total_frames = full_chromagram.shape[1]
+        
+        timeline = []
+        maqam_counts = {}
+        
+        # Slide window across the chromagram
+        start_frame = 0
+        while start_frame < total_frames:
+            end_frame = min(start_frame + window_frames, total_frames)
+            
+            # Skip if window is too small
+            if end_frame - start_frame < window_frames // 4:
+                break
+            
+            # Extract window
+            window_chroma = full_chromagram[:, start_frame:end_frame]
+            
+            # Convert to sequence (take max bin at each time step)
+            sequence = np.argmax(window_chroma, axis=0)
+            
+            # Predict for this window
+            result = self.predict(sequence)
+            
+            # Calculate timestamps
+            start_time = start_frame / frame_rate
+            end_time = end_frame / frame_rate
+            
+            maqam = result["prediction"]
+            jins_analysis = result.get("jins_analysis", {})
+            
+            timeline.append({
+                "start_time": round(start_time, 2),
+                "end_time": round(end_time, 2),
+                "maqam": maqam,
+                "jins1": jins_analysis.get("jins1", "Unknown"),
+                "jins2": jins_analysis.get("jins2", "Unknown"),
+                "confidence": round(result.get("confidence", 0), 3)
+            })
+            
+            # Count maqam occurrences
+            maqam_counts[maqam] = maqam_counts.get(maqam, 0) + 1
+            
+            start_frame += hop_frames
+        
+        # Detect modulations (maqam changes)
+        modulations = []
+        for i in range(1, len(timeline)):
+            if timeline[i]["maqam"] != timeline[i-1]["maqam"]:
+                modulations.append({
+                    "time": timeline[i]["start_time"],
+                    "from_maqam": timeline[i-1]["maqam"],
+                    "to_maqam": timeline[i]["maqam"]
+                })
+        
+        # Find dominant maqam
+        dominant_maqam = max(maqam_counts, key=maqam_counts.get) if maqam_counts else "Unknown"
+        
+        return {
+            "timeline": timeline,
+            "modulations": modulations,
+            "dominant_maqam": dominant_maqam,
+            "total_segments": len(timeline),
+            "window_seconds": window_seconds,
+            "hop_seconds": hop_seconds
+        }
+

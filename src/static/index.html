@@ -510,6 +510,113 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+
+        /* Timeline Visualization */
+        .timeline-chart {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        .timeline-track {
+            display: flex;
+            height: 50px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .timeline-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            min-width: 60px;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .timeline-labels {
+            display: flex;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .timeline-labels span {
+            flex: 1;
+            text-align: center;
+        }
+
+        .modulation-list {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .modulation-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modulation-item:last-child {
+            border-bottom: none;
+        }
+
+        .modulation-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            min-width: 50px;
+        }
+
+        .modulation-arrow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .modulation-from,
+        .modulation-to {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
     </style>
 </head>
 
@@ -615,6 +722,43 @@
                 </ol>
             </div>
         </section>
+
+        <!-- Timeline Section -->
+        <section class="section" id="timelineSection">
+            <button class="back-btn" onclick="showSection('detect')">← Back</button>
+            <h2 class="section-title">Maqam Timeline Analysis</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
+                Analyze how a maqam changes throughout a recording. Detect modulations and transitions.
+            </p>
+
+            <div class="hero-card" style="padding: 20px;">
+                <div class="waveform" id="timelineWaveform"></div>
+                <div class="btn-group">
+                    <button class="btn" id="timelineRecordBtn" onclick="toggleTimelineRecording()">
+                        <span id="timelineRecordIcon">🎤</span>
+                        <span id="timelineRecordText">Record</span>
+                    </button>
+                    <label class="btn">
+                        <span>📁</span>
+                        <span>Upload</span>
+                        <input type="file" id="timelineInput" accept="audio/*">
+                    </label>
+                </div>
+            </div>
+
+            <div id="timelineResults" style="display: none;">
+                <div class="summary-stats" id="summaryStats"></div>
+                <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px;">Maqam Journey</h3>
+                <div class="timeline-chart">
+                    <div class="timeline-track" id="timelineTrack"></div>
+                    <div class="timeline-labels" id="timelineLabels"></div>
+                </div>
+                <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px;">Modulations Detected</h3>
+                <div class="modulation-list" id="modulationList"></div>
+            </div>
+
+            <div id="timelineStatus"></div>
+        </section>
     </div>
 
     <!-- Result Modal -->
@@ -642,6 +786,10 @@
         <div class="nav-item" id="navContribute" onclick="showSection('contribute')">
             <span class="nav-icon">🎁</span>
             <span>Contribute</span>
+        </div>
+        <div class="nav-item" id="navTimeline" onclick="showSection('timeline')">
+            <span class="nav-icon">📊</span>
+            <span>Timeline</span>
         </div>
         <div class="nav-item" id="navLearn" onclick="showSection('learn')">
             <span class="nav-icon">📚</span>
@@ -678,11 +826,17 @@
         let selectedMaqam = null;
         let contributeBlob = null;
 
+        // Timeline State
+        let timelineRecorder = null;
+        let timelineChunks = [];
+        let isTimelineRecording = false;
+
         // Initialize
         function init() {
             initMaqamGrid();
             initWaveform('waveform');
             initWaveform('contributeWaveform');
+            initWaveform('timelineWaveform');
         }
 
         function initMaqamGrid() {
@@ -723,6 +877,7 @@
 
             if (section === 'detect') document.getElementById('navHome').classList.add('active');
             if (section === 'contribute') document.getElementById('navContribute').classList.add('active');
+            if (section === 'timeline') document.getElementById('navTimeline').classList.add('active');
             if (section === 'learn') document.getElementById('navLearn').classList.add('active');
         }
 
@@ -929,6 +1084,200 @@
                 updateSubmitButton();
             }
         });
+
+        // Timeline input handler
+        document.getElementById('timelineInput').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) analyzeTimeline(file);
+        });
+
+        // ===== TIMELINE ANALYSIS FUNCTIONS =====
+        async function toggleTimelineRecording() {
+            if (isTimelineRecording) {
+                stopTimelineRecording();
+            } else {
+                await startTimelineRecording();
+            }
+        }
+
+        async function startTimelineRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 64;
+
+                timelineRecorder = new MediaRecorder(stream);
+                timelineChunks = [];
+
+                timelineRecorder.ondataavailable = e => timelineChunks.push(e.data);
+                timelineRecorder.onstop = () => {
+                    const blob = new Blob(timelineChunks, { type: 'audio/wav' });
+                    analyzeTimeline(blob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+
+                timelineRecorder.start();
+                isTimelineRecording = true;
+
+                document.getElementById('timelineRecordBtn').classList.add('recording');
+                document.getElementById('timelineRecordIcon').textContent = '⏹️';
+                document.getElementById('timelineRecordText').textContent = 'Stop';
+
+                visualizeTimeline();
+            } catch (err) {
+                alert('Microphone access denied.');
+                console.error(err);
+            }
+        }
+
+        function stopTimelineRecording() {
+            if (timelineRecorder && isTimelineRecording) {
+                timelineRecorder.stop();
+                isTimelineRecording = false;
+
+                document.getElementById('timelineRecordBtn').classList.remove('recording');
+                document.getElementById('timelineRecordIcon').textContent = '🎤';
+                document.getElementById('timelineRecordText').textContent = 'Record';
+
+                cancelAnimationFrame(animationId);
+                initWaveform('timelineWaveform');
+            }
+        }
+
+        function visualizeTimeline() {
+            const waveform = document.getElementById('timelineWaveform');
+            const bars = waveform.querySelectorAll('.waveform-bar');
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                if (!isTimelineRecording) return;
+                animationId = requestAnimationFrame(draw);
+
+                analyser.getByteFrequencyData(dataArray);
+
+                bars.forEach((bar, i) => {
+                    const value = dataArray[i % bufferLength] || 0;
+                    bar.style.height = Math.max(8, value / 4) + 'px';
+                });
+            }
+
+            draw();
+        }
+
+        async function analyzeTimeline(blob) {
+            document.getElementById('timelineStatus').innerHTML =
+                '<div class="status info">🔄 Analyzing timeline... This may take a moment.</div>';
+            document.getElementById('timelineResults').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', blob, 'recording.wav');
+
+            try {
+                const response = await fetch('/predict-timeline?window_seconds=10&hop_seconds=5', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                displayTimeline(data);
+                document.getElementById('timelineStatus').innerHTML = '';
+            } catch (err) {
+                document.getElementById('timelineStatus').innerHTML =
+                    `<div class="status error">❌ Error: ${err.message}</div>`;
+            }
+        }
+
+        function displayTimeline(data) {
+            // Show results section
+            document.getElementById('timelineResults').style.display = 'block';
+
+            // Summary stats
+            const statsHtml = `
+                <div class="stat-card">
+                    <div class="stat-value">${data.dominant_maqam}</div>
+                    <div class="stat-label">Dominant Maqam</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${data.modulations?.length || 0}</div>
+                    <div class="stat-label">Modulations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${Math.round(data.duration_seconds || 0)}s</div>
+                    <div class="stat-label">Duration</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${data.total_segments || 0}</div>
+                    <div class="stat-label">Segments</div>
+                </div>
+            `;
+            document.getElementById('summaryStats').innerHTML = statsHtml;
+
+            // Timeline track
+            const track = document.getElementById('timelineTrack');
+            const labels = document.getElementById('timelineLabels');
+
+            if (data.timeline && data.timeline.length > 0) {
+                const totalDuration = data.duration_seconds ||
+                    (data.timeline[data.timeline.length - 1]?.end_time || 60);
+
+                track.innerHTML = data.timeline.map(seg => {
+                    const width = ((seg.end_time - seg.start_time) / totalDuration) * 100;
+                    const maqamData = MAQAM_FAMILIES.find(m => seg.maqam.includes(m.name)) || { color: '#555' };
+                    return `
+                        <div class="timeline-segment" 
+                             style="width: ${width}%; background: ${maqamData.color};"
+                             title="${seg.maqam} (${seg.start_time}s - ${seg.end_time}s)\nConfidence: ${(seg.confidence * 100).toFixed(0)}%">
+                            ${seg.maqam.split('_')[0]}
+                        </div>
+                    `;
+                }).join('');
+
+                // Time labels
+                const labelCount = Math.min(6, data.timeline.length);
+                const step = Math.floor(data.timeline.length / labelCount) || 1;
+                labels.innerHTML = data.timeline
+                    .filter((_, i) => i % step === 0)
+                    .map(seg => `<span>${Math.round(seg.start_time)}s</span>`)
+                    .join('');
+            } else {
+                track.innerHTML = '<div style="padding: 15px; text-align: center; color: var(--text-muted);">No timeline data</div>';
+                labels.innerHTML = '';
+            }
+
+            // Modulation list
+            const modList = document.getElementById('modulationList');
+            if (data.modulations && data.modulations.length > 0) {
+                modList.innerHTML = data.modulations.map(mod => {
+                    const fromColor = MAQAM_FAMILIES.find(m => mod.from_maqam.includes(m.name))?.color || '#555';
+                    const toColor = MAQAM_FAMILIES.find(m => mod.to_maqam.includes(m.name))?.color || '#555';
+                    return `
+                        <div class="modulation-item">
+                            <span class="modulation-time">${mod.time.toFixed(1)}s</span>
+                            <div class="modulation-arrow">
+                                <span class="modulation-from" style="background: ${fromColor}; color: white;">
+                                    ${mod.from_maqam.split('_')[0]}
+                                </span>
+                                →
+                                <span class="modulation-to" style="background: ${toColor}; color: white;">
+                                    ${mod.to_maqam.split('_')[0]}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                modList.innerHTML = '<p style="color: var(--text-muted); text-align: center;">No modulations detected - the piece stays in one maqam</p>';
+            }
+        }
 
         // Result Modal
         function showResult(data) {

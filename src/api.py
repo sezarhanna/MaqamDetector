@@ -179,6 +179,72 @@ async def predict(file: UploadFile = File(...)):
             os.remove(temp_path)
 
 
+@app.post("/predict-timeline")
+async def predict_timeline(
+    file: UploadFile = File(...),
+    window_seconds: int = Query(10, description="Analysis window size in seconds"),
+    hop_seconds: int = Query(5, description="Hop between windows in seconds")
+):
+    """
+    Analyze an audio file and detect maqam changes over time.
+    Returns a timeline showing maqam transitions/modulations.
+    Supports: MP3, WAV, FLAC, M4A, OGG
+    """
+    # Validate file extension
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in SUPPORTED_AUDIO_EXTENSIONS:
+        return JSONResponse(
+            status_code=400,
+            content={"error": f"Unsupported format. Supported: {', '.join(SUPPORTED_AUDIO_EXTENSIONS)}"}
+        )
+    
+    # Save to temp file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        temp_path = tmp.name
+    
+    try:
+        # Load and process audio
+        audio, sr = load_audio_file(temp_path)
+        
+        # Get duration
+        duration_seconds = len(audio) / sr
+        
+        # Get full chromagram
+        chroma = processor.get_chromagram(audio, sr=sr)
+        
+        # Find tonic for normalization reference
+        rukooz = finder.find_rukooz(chroma)
+        
+        # Normalize the chromagram rows relative to tonic
+        normalized_chroma = np.roll(chroma, -int(rukooz), axis=0)
+        
+        # Get timeline prediction
+        timeline_result = brain.predict_timeline(
+            normalized_chroma, 
+            window_seconds=window_seconds, 
+            hop_seconds=hop_seconds,
+            sr=sr
+        )
+        
+        return {
+            "filename": file.filename,
+            "duration_seconds": round(duration_seconds, 2),
+            "rukooz_bin": int(rukooz),
+            **timeline_result
+        }
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Timeline analysis failed: {str(e)}"}
+        )
+    finally:
+        # Cleanup temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
 @app.post("/contribute")
 async def contribute_training_data(
     maqam_name: str = Query(..., description="Name of the maqam"),
