@@ -636,6 +636,16 @@
                 <h1 class="hero-title">Detect Maqam</h1>
                 <p class="hero-subtitle">Record live or upload audio to identify</p>
 
+                <!-- Model Selector -->
+                <div style="margin-bottom: 16px; margin-top: -12px;">
+                    <label style="color: rgba(255,255,255,0.8); font-size: 0.85rem; margin-right: 8px;">Model:</label>
+                    <select id="modelSelect"
+                        style="padding: 6px 12px; border-radius: 8px; border: none; background: rgba(255,255,255,0.2); color: white; outline: none; font-family: inherit;">
+                        <option value="cnn" style="color: black;">CNN (High Accuracy)</option>
+                        <option value="markov" style="color: black;">Markov Chain (Classic)</option>
+                    </select>
+                </div>
+
                 <div class="waveform" id="waveform">
                     <!-- Waveform bars will be added by JS -->
                 </div>
@@ -966,6 +976,10 @@
         async function analyzeAudio(blob) {
             const formData = new FormData();
             formData.append('file', blob, 'recording.wav');
+
+            // Add selected algorithm
+            const algo = document.getElementById('modelSelect').value;
+            formData.append('algorithm', algo);
 
             try {
                 const response = await fetch('/predict', { method: 'POST', body: formData });

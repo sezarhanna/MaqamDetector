@@ -1,8 +1,13 @@
 import os
 import numpy as np
 import json
-from .MLPClassifier import MLPClassifier
-from .JinsLibrary import MAQAM_STRUCTURE, JinsAnalyzer
+
+try:
+    from .MLPClassifier import MLPClassifier
+    from .JinsLibrary import MAQAM_STRUCTURE, JinsAnalyzer
+except ImportError:
+    from MLPClassifier import MLPClassifier
+    from JinsLibrary import MAQAM_STRUCTURE, JinsAnalyzer
 
 class MaqamTrainer:
     """

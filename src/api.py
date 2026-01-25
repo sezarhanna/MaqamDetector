@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect, Query
+from fastapi import FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect, Query, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
@@ -23,12 +23,20 @@ try:
 except ImportError:
     SOUNDFILE_AVAILABLE = False
 
-from .SignalProcessor import SignalProcessor
-from .TonicFinder import TonicFinder
-from .SequenceNormalizer import SequenceNormalizer
-from .MaqamBrain import MaqamBrain
-from .MaqamTrainer import MaqamTrainer
-from .JinsLibrary import MAQAM_STRUCTURE
+try:
+    from .SignalProcessor import SignalProcessor
+    from .TonicFinder import TonicFinder
+    from .SequenceNormalizer import SequenceNormalizer
+    from .MaqamBrain import MaqamBrain
+    from .MaqamTrainer import MaqamTrainer
+    from .JinsLibrary import MAQAM_STRUCTURE
+except ImportError:
+    from SignalProcessor import SignalProcessor
+    from TonicFinder import TonicFinder
+    from SequenceNormalizer import SequenceNormalizer
+    from MaqamBrain import MaqamBrain
+    from MaqamTrainer import MaqamTrainer
+    from JinsLibrary import MAQAM_STRUCTURE
 
 app = FastAPI(
     title="Maqam Detector API 2.0",
@@ -46,13 +54,19 @@ app.add_middleware(
 )
 
 # Static files for web UI
-app.mount("/app", StaticFiles(directory="src/static", html=True), name="static")
+import pathlib
+_current_dir = pathlib.Path(__file__).parent
+app.mount("/app", StaticFiles(directory=str(_current_dir / "static"), html=True), name="static")
 
-# Initialize Components (36-bin)
+# Initialize Components (Keras CNN)
+MODEL_PATH = '/Users/sezarhanna/Downloads/best_model_music_cnn_pitch.keras'
+brain = MaqamBrain(model_path=MODEL_PATH)
+
+# Legacy components (kept for compatibility if needed)
 processor = SignalProcessor(bins_per_octave=36)
 finder = TonicFinder(bins_per_octave=36)
 normalizer = SequenceNormalizer(bins_per_octave=36)
-brain = MaqamBrain(bins_per_octave=36)
+# brain = MaqamBrain(bins_per_octave=36) # Old brain disabled
 
 # Supported audio formats
 SUPPORTED_AUDIO_EXTENSIONS = {'.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac', '.wma'}
@@ -127,9 +141,9 @@ def get_training_stats():
 
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(file: UploadFile = File(...), algorithm: str = Form("cnn")):
     """
-    Analyze an audio file and predict its maqam.
+    Analyze an audio file and predict its maqam using the Keras CNN model.
     Supports: MP3, WAV, FLAC, M4A, OGG
     """
     # Validate file extension
@@ -146,29 +160,20 @@ async def predict(file: UploadFile = File(...)):
         temp_path = tmp.name
     
     try:
-        # Load and process audio
-        audio, sr = load_audio_file(temp_path)
-        
-        # Get chromagram
-        chroma = processor.get_chromagram(audio, sr=sr)
-        
-        # Find tonic
-        rukooz = finder.find_rukooz(chroma)
-        
-        # Normalize sequence
-        sequence = normalizer.normalize(chroma, rukooz)
-        
-        # Predict
-        result = brain.predict(sequence)
+        # New Flow: Direct file prediction using Keras Brain
+        # New Flow: Direct file prediction using Keras Brain
+        print(f"Processing prediction for: {temp_path} with algorithm={algorithm}")
+        result = brain.predict_file(temp_path, algorithm=algorithm)
         
         return {
             "filename": file.filename,
             "predicted_maqam": result["prediction"],
-            "rukooz_bin": int(rukooz),
+            "rukooz_bin": 0, # Not used in CNN
             "details": result
         }
         
     except Exception as e:
+        print(f"Error processing file: {e}")
         return JSONResponse(
             status_code=500,
             content={"error": f"Analysis failed: {str(e)}"}

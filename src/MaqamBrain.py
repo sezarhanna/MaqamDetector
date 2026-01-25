@@ -1,259 +1,204 @@
 import numpy as np
-import json
 import os
-from .MLPClassifier import MLPClassifier
-from .JinsLibrary import JinsAnalyzer, MAQAM_STRUCTURE
+import librosa
+import tensorflow as tf
+from MarkovSeyirClassifier import MarkovSeyirClassifier
+from SignalProcessor import SignalProcessor
+from TonicFinder import TonicFinder
+from SequenceNormalizer import SequenceNormalizer
+
+# Maqam mapping based on the Kaggle notebook order
+MAQAM_MAPPING = {
+    0: "Ajam",      # Agm
+    1: "Hijaz",     # Hjaz
+    2: "Bayati",    # Byat
+    3: "Nahawand",  # Nahawond
+    4: "Saba",      # Sba
+    5: "Sikah",     # Sekah
+    6: "Rast",      # Rast
+    7: "Kurd"       # Cord
+}
 
 class MaqamBrain:
     """
-    The Central Intelligence of Maqam Detector 2.0.
-    
-    Hybrid Architecture with Jins-Based Detection:
-    1. Jins Analyzer: Segments melody and identifies jins1 + jins2
-    2. Markov Engine: Calculates transition log-likelihoods
-    3. MLP Engine: Predicts probabilities from Seyir structure
+    The Central Intelligence of Maqam Detector.
+    Now powered by a pre-trained Keras CNN model.
     """
     
-    def __init__(self, bins_per_octave=36, 
-                 maqam_db_path="maqam_database_hybrid.json",
-                 jins_db_path="jins_database.json",
-                 mlp_path="mlp_model.pkl"):
-        self.bins_per_octave = bins_per_octave
-        self.markov_models = {}
-        self.jins_models = {}
-        self.mlp = MLPClassifier(model_path=mlp_path)
-        self.jins_analyzer = JinsAnalyzer(bins_per_octave)
-        
-        self.maqam_db_path = maqam_db_path
-        self.jins_db_path = jins_db_path
-        
-        self._load_markov_models()
-        self._load_jins_models()
+    def __init__(self, model_path, bins_per_octave=36):
+        self.model_path = model_path
+        self.model = None
+        self.output_classes = 8
+        self._load_model()
 
-    def _load_markov_models(self):
-        """Load maqam-level Markov transition matrices."""
-        if os.path.exists(self.maqam_db_path):
+        # Initialize Markov Brain components
+        self.processor = SignalProcessor()
+        self.finder = TonicFinder()
+        self.normalizer = SequenceNormalizer()
+        self.markov_brain = MarkovSeyirClassifier()
+
+    def _load_model(self):
+        """Load the Keras model."""
+        if os.path.exists(self.model_path):
             try:
-                with open(self.maqam_db_path, "r") as f:
-                    data = json.load(f)
-                for name, matrix_list in data.items():
-                    self.markov_models[name] = np.array(matrix_list)
-                print(f"MaqamBrain: Loaded {len(self.markov_models)} Maqam Markov models.")
+                print(f"MaqamBrain: Loading model from {self.model_path}...")
+                self.model = tf.keras.models.load_model(self.model_path)
+                print("MaqamBrain: Model loaded successfully!")
+                self.output_classes = self.model.output_shape[-1]
             except Exception as e:
-                print(f"MaqamBrain: Failed to load Maqam Markov DB: {e}")
+                print(f"MaqamBrain: Failed to load model: {e}")
         else:
-            print("MaqamBrain: No Maqam Markov DB found.")
+            print(f"MaqamBrain: Model not found at {self.model_path}")
 
-    def _load_jins_models(self):
-        """Load jins-level Markov transition matrices."""
-        if os.path.exists(self.jins_db_path):
+    def predict_file(self, file_path, algorithm="cnn"):
+        """
+        Predict maqam from an audio file.
+        Algorithm: 'cnn' or 'markov'.
+        """
+        if algorithm == "markov":
+            return self.predict_markov_file(file_path)
+            
+        # Default to CNN
+        if self.model is None:
+            return {"prediction": "Model Error", "confidence": 0.0, "details": "Model not loaded"}
+
+        try:
+            # 1. Preprocess
+            features = self._extract_features(file_path)
+            if features is None:
+                 return {"prediction": "Processing Error", "confidence": 0.0, "details": "Could not extract features"}
+            
+            # 2. Reshape for CNN (Batch, Mels, Time, Channels)
+            # Model expects (None, 60, 358, 1) based on analysis
+            features = features.reshape(1, 60, 358, 1)
+            
+            # 3. Predict
+            pred_probs = self.model.predict(features, verbose=0)[0]
+            pred_class_idx = np.argmax(pred_probs)
+            confidence = float(pred_probs[pred_class_idx])
+            
+            predicted_maqam = MAQAM_MAPPING.get(pred_class_idx, f"Unknown ({pred_class_idx})")
+            
+            # Create scores dict
+            scores = {MAQAM_MAPPING.get(i, str(i)): float(prob) for i, prob in enumerate(pred_probs)}
+            import json
+            print(f"Prediction: {predicted_maqam} ({confidence:.2f})")
+            print(f"Scores: {json.dumps(scores, indent=2)}")
+            
+            return {
+                "prediction": predicted_maqam,
+                "confidence": confidence,
+                "scores": scores,
+                "jins_analysis": {"jins1": "N/A", "jins2": "N/A"} # Legacy support
+            }
+            
+        except Exception as e:
+            print(f"Prediction error: {e}")
+            return {"prediction": "Error", "confidence": 0.0, "details": str(e)}
+
+    def _extract_features(self, audio_path, target_shape=(60, 358)):
+        """
+        Extract Mel Spectrogram features matching the training:
+        - sr=22050
+        - duration=8.0s (approx)
+        - n_mels=60
+        - n_fft=2048
+        - hop_length=512
+        """
+        try:
+            # Load audio, ensure mono
+            y, sr = librosa.load(audio_path, sr=22050, duration=8.0)
+            
+            # Pad if too short (at least 1 second)
+            if len(y) < sr:
+                y = np.pad(y, (0, sr - len(y)))
+                
+            # Compute Mel Spectrogram
+            mel_spec = librosa.feature.melspectrogram(
+                y=y, 
+                sr=sr, 
+                n_mels=60, 
+                n_fft=2048, 
+                hop_length=512
+            )
+            
+            # Convert to Log Scale (dB)
+            mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            
+            # Fix Time Dimension to 358
+            current_width = mel_spec_db.shape[1]
+            target_width = target_shape[1]
+            
+            if current_width < target_width:
+                # Pad with zeros
+                pad_width = target_width - current_width
+                mel_spec_db = np.pad(mel_spec_db, ((0, 0), (0, pad_width)), mode='constant')
+            else:
+                # Crop
+                mel_spec_db = mel_spec_db[:, :target_width]
+                
+            # Normalize (Min-Max to 0-1 range)
+            # This is critical if the model was trained with normalized data
+            min_val = mel_spec_db.min()
+            max_val = mel_spec_db.max()
+            if max_val - min_val > 0:
+                mel_spec_db = (mel_spec_db - min_val) / (max_val - min_val)
+            else:
+                mel_spec_db = np.zeros_like(mel_spec_db)
+            
+            print(f"Spectrogram Stats - Min: {min_val:.2f}, Max: {max_val:.2f}, Mean: {mel_spec_db.mean():.2f}")
+                
+            return mel_spec_db
+            
+        except Exception as e:
+            import os
             try:
-                with open(self.jins_db_path, "r") as f:
-                    data = json.load(f)
-                for name, matrix_list in data.items():
-                    self.jins_models[name] = np.array(matrix_list)
-                print(f"MaqamBrain: Loaded {len(self.jins_models)} Jins Markov models.")
-            except Exception as e:
-                print(f"MaqamBrain: Failed to load Jins Markov DB: {e}")
-        else:
-            print("MaqamBrain: No Jins Markov DB found.")
+                size = os.path.getsize(audio_path)
+            except:
+                size = "unknown"
+            print(f"Feature extraction failed for {audio_path} (size={size}): {repr(e)}")
+            import traceback
+            traceback.print_exc()
+            return None
+            
+    def predict_markov_file(self, file_path):
+        """
+        Predict using the Markov Chain logic (classic method).
+        """
+        try:
+            # 1. Signal Processing
+            chroma = self.processor.get_chromagram(file_path)
+            if chroma.shape[1] < 2:
+                return {"prediction": "Error", "confidence": 0.0, "details": "Audio too short"}
+            
+            # 2. Find Rukooz
+            rukooz = self.finder.find_rukooz(chroma)
+            
+            # 3. Normalize Sequence
+            sequence = self.normalizer.normalize(chroma, rukooz)
+            
+            # 4. Predict using Markov
+            best_fit, results = self.markov_brain.predict(sequence)
+            
+            # Normalize scores for frontend
+            # Softmax-ish or just normalize log likelihoods? 
+            # Log likelihoods are negative. Max is best.
+            # Simple approach: Return raw logs or a relative score
+            
+            return {
+                "prediction": best_fit,
+                "confidence": 1.0, # Placeholder, Markov doesn't give probability easily
+                "scores": results,
+                "details": "Markov Prediction"
+            }
+            
+        except Exception as e:
+            print(f"Markov Prediction Error: {e}")
+            return {"prediction": "Error", "confidence": 0.0, "details": str(e)}
 
+    # Legacy method support (stubbed)
     def predict(self, sequence):
-        """
-        Returns hybrid prediction results with jins-level analysis.
-        
-        Returns:
-            dict with:
-            - prediction: Best maqam name
-            - jins_analysis: Detected jins1 and jins2
-            - markov_scores: Log-likelihoods per maqam
-            - mlp_scores: MLP probabilities per maqam
-            - confidence: Overall confidence score
-        """
-        # 1. Jins-based analysis (new!)
-        jins_result = self.jins_analyzer.analyze_full_sequence(sequence)
-        
-        # 2. Markov predictions (maqam-level)
-        markov_scores = {}
-        if self.markov_models:
-            for name, matrix in self.markov_models.items():
-                log_likelihood = 0
-                for i in range(len(sequence) - 1):
-                    curr = min(int(sequence[i]), self.bins_per_octave - 1)
-                    nxt = min(int(sequence[i+1]), self.bins_per_octave - 1)
-                    p = matrix[curr, nxt]
-                    log_likelihood += np.log(p + 1e-9)
-                markov_scores[name] = log_likelihood
-        
-        # 3. MLP predictions
-        seq_matrix = np.zeros((self.bins_per_octave, self.bins_per_octave))
-        for i in range(len(sequence) - 1):
-            curr = min(int(sequence[i]), self.bins_per_octave - 1)
-            nxt = min(int(sequence[i+1]), self.bins_per_octave - 1)
-            seq_matrix[curr, nxt] += 1
-        
-        row_sums = seq_matrix.sum(axis=1)[:, None]
-        seq_matrix = np.divide(seq_matrix, row_sums, out=np.zeros_like(seq_matrix), where=row_sums!=0)
-        
-        mlp_scores = self.mlp.predict_proba(seq_matrix)
-        
-        # 4. Combine results using weighted voting
-        best_maqam = self._combine_predictions(jins_result, markov_scores, mlp_scores)
-        
-        # Calculate overall confidence
-        confidence = self._calculate_confidence(jins_result, markov_scores, mlp_scores, best_maqam)
-            
-        return {
-            "prediction": best_maqam,
-            "jins_analysis": {
-                "jins1": jins_result.get("jins1", "Unknown"),
-                "jins2": jins_result.get("jins2", "Unknown"),
-                "jins_confidence": jins_result.get("confidence", 0.0),
-                "jins2_root": jins_result.get("jins2_root", 15)
-            },
-            "markov_scores": markov_scores,
-            "mlp_scores": mlp_scores,
-            "confidence": confidence
-        }
+        return {"prediction": "Use predict_file instead", "confidence": 0.0}
     
-    def _combine_predictions(self, jins_result, markov_scores, mlp_scores):
-        """
-        Combine predictions from all three sources.
-        Priority: MLP > Markov > Jins (if trained), else Jins > Markov
-        """
-        # If MLP is trained and has results, use it primarily
-        if mlp_scores:
-            return max(mlp_scores, key=mlp_scores.get)
-        
-        # If Markov models exist, use them
-        if markov_scores:
-            return max(markov_scores, key=markov_scores.get)
-        
-        # Fallback to jins-based prediction
-        return jins_result.get("maqam", "Unknown")
-    
-    def _calculate_confidence(self, jins_result, markov_scores, mlp_scores, prediction):
-        """Calculate overall confidence score (0-1)."""
-        confidence_sources = []
-        
-        # Jins confidence
-        if jins_result.get("confidence"):
-            confidence_sources.append(jins_result["confidence"])
-        
-        # MLP confidence for the predicted class
-        if mlp_scores and prediction in mlp_scores:
-            confidence_sources.append(mlp_scores[prediction])
-        
-        # Markov confidence (normalized)
-        if markov_scores and prediction in markov_scores:
-            # Convert log-likelihood to relative confidence
-            scores = list(markov_scores.values())
-            if len(scores) > 1:
-                score_range = max(scores) - min(scores)
-                if score_range > 0:
-                    markov_conf = (markov_scores[prediction] - min(scores)) / score_range
-                    confidence_sources.append(markov_conf)
-        
-        if confidence_sources:
-            return sum(confidence_sources) / len(confidence_sources)
-        return 0.0
-
-    def get_jins_details(self, maqam_name):
-        """Get the jins structure for a specific maqam."""
-        return MAQAM_STRUCTURE.get(maqam_name, {
-            "jins1": "Unknown",
-            "jins2": "Unknown",
-            "jins1_root": 0,
-            "jins2_root": 15
-        })
-
     def predict_timeline(self, full_chromagram, window_seconds=10, hop_seconds=5, sr=22050):
-        """
-        Analyze audio in sliding windows to detect maqam changes over time.
-        
-        Args:
-            full_chromagram: Complete chromagram of the audio
-            window_seconds: Size of each analysis window in seconds
-            hop_seconds: Hop size between windows in seconds
-            sr: Sample rate used for chromagram
-        
-        Returns:
-            dict with:
-            - timeline: List of {start_time, end_time, maqam, jins1, jins2, confidence}
-            - modulations: List of detected maqam changes
-            - dominant_maqam: Most frequent maqam across all windows
-        """
-        # Calculate frame sizes (approximate based on librosa defaults)
-        # librosa uses hop_length=512 by default, so each frame is ~23ms at 22050 Hz
-        hop_length = 512
-        frame_rate = sr / hop_length  # frames per second
-        
-        window_frames = int(window_seconds * frame_rate)
-        hop_frames = int(hop_seconds * frame_rate)
-        
-        total_frames = full_chromagram.shape[1]
-        
-        timeline = []
-        maqam_counts = {}
-        
-        # Slide window across the chromagram
-        start_frame = 0
-        while start_frame < total_frames:
-            end_frame = min(start_frame + window_frames, total_frames)
-            
-            # Skip if window is too small
-            if end_frame - start_frame < window_frames // 4:
-                break
-            
-            # Extract window
-            window_chroma = full_chromagram[:, start_frame:end_frame]
-            
-            # Convert to sequence (take max bin at each time step)
-            sequence = np.argmax(window_chroma, axis=0)
-            
-            # Predict for this window
-            result = self.predict(sequence)
-            
-            # Calculate timestamps
-            start_time = start_frame / frame_rate
-            end_time = end_frame / frame_rate
-            
-            maqam = result["prediction"]
-            jins_analysis = result.get("jins_analysis", {})
-            
-            timeline.append({
-                "start_time": round(start_time, 2),
-                "end_time": round(end_time, 2),
-                "maqam": maqam,
-                "jins1": jins_analysis.get("jins1", "Unknown"),
-                "jins2": jins_analysis.get("jins2", "Unknown"),
-                "confidence": round(result.get("confidence", 0), 3)
-            })
-            
-            # Count maqam occurrences
-            maqam_counts[maqam] = maqam_counts.get(maqam, 0) + 1
-            
-            start_frame += hop_frames
-        
-        # Detect modulations (maqam changes)
-        modulations = []
-        for i in range(1, len(timeline)):
-            if timeline[i]["maqam"] != timeline[i-1]["maqam"]:
-                modulations.append({
-                    "time": timeline[i]["start_time"],
-                    "from_maqam": timeline[i-1]["maqam"],
-                    "to_maqam": timeline[i]["maqam"]
-                })
-        
-        # Find dominant maqam
-        dominant_maqam = max(maqam_counts, key=maqam_counts.get) if maqam_counts else "Unknown"
-        
-        return {
-            "timeline": timeline,
-            "modulations": modulations,
-            "dominant_maqam": dominant_maqam,
-            "total_segments": len(timeline),
-            "window_seconds": window_seconds,
-            "hop_seconds": hop_seconds
-        }
-
+         pass # Timeline not supported with this CNN model yet
